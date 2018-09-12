@@ -1,27 +1,30 @@
-
 import processing.serial.*;
 import ddf.minim.*;
 
 Minim minim;
 AudioPlayer smack;
+final int MAX_BIKE_SPEED=190;
 PGraphics scrollingBG;
-Serial myPort;  // Create object from Serial class
-int val, bx, by;        // Data received from the serial port
+Serial myPort;             // Create object from Serial class
+int bikeValue, bx, by, keyValue; // Data received from the serial port
 boolean noPort, pKeyPressed, hit, keyBoard, dead;
-float power, force, maxPower, minPower=-1.5, angle, x=150, y, size=100;
+
+float power,aimPower, force, maxPower, minPower=-1.5, angle, x=500, y, size=100, amplifyingPower=4, vy;
 ArrayList<Obstacle> Obstacles= new ArrayList<Obstacle>(); 
 PImage img, bg1, bg2, glider1, glider2;
 
 void setup() 
 {
   rectMode(CENTER);
+  //size(1500, 800);
   fullScreen(P3D);
+  textAlign(CENTER);
   minim = new Minim(this);
   smack = minim.loadFile("SMACK - Sound Effect.wav");
   try {
     String portName = Serial.list()[0];
     myPort = new Serial(this, portName, 9600);
-    myPort.buffer(1);
+    myPort.buffer(0);
     keyBoard=false;
   }
   catch(Exception e) {
@@ -48,10 +51,10 @@ void setup()
 }
 
 void draw()
-{  
-  background(255);             // Set background to white
+{ 
+  background(255);
   bx+=5;
-  if(bx>width)bx-=width;
+  if (bx>width)bx-=width;
   image(scrollingBG, -bx, -y*0.1); 
   for (Obstacle w : Obstacles) {
     w.display();
@@ -66,60 +69,79 @@ void draw()
       break;
     }
   }
+  sensePortInfo();
+  keyBoardSensing();
+ // hitDetection();
 
-  if ( !noPort) {  // If data is available,
-    if (myPort.available() > 0)val = myPort.read();         // read it and store it in val
-  } else {
-    if (!pKeyPressed &&keyPressed && key==' ') {
-      val=2;
-    } else {
-      val=0;
-    }
-  }
-  try { 
-    if (myPort.available() > 0) {  // If data is available,
-      val = myPort.read();         // read it and store it in val
-    }
-  }
-  catch(Exception e) {
-  }
-
-  pKeyPressed=keyPressed;
-
-  if (val == 2) {
-    //fill(255, 0, 0);
-    if (power<height) {
-      if (force<0)force/=2;
-      if (keyBoard)force+=3-(0.0001*power);
-      else force+=1-(0.0001*power);
-      angle=(20-angle)*.5;
-    } else power=height;
-  } 
+  /* x+=0.1;
+   power+=force;
+   if (power>0) { 
+   force-=0.1;
+   //angle+=2;
+   angle=-force*20;
+   if (angle<-80)angle=-80;
+   if (angle>80)angle=80;
+   } else power=0;
+   if (power< minPower) power=minPower;*/
+  y=height-power;
+  //rect(50, height, 100, -power);
+  displayCharacter();
+  println("cykel:"+bikeValue +"  key:"+ keyValue);
+}
+void hitDetection(){
   if (hit) {
     x-=1;
     angle+=5;
   }
-  x+=0.1;
-  power+=force;
-  if (power>0) { 
-    force-=0.1;
-    //angle+=2;
-    angle=-force*20;
-    if (angle<-80)angle=-80;
-    if (angle>80)angle=80;
-  } else power=0;
-  if (power< minPower) power=minPower;
-  y=height-power;
-  //rect(50, height, 100, -power);
-  display();
+}
+void sensePortInfo() {
+  if (!noPort) {  
+    if (myPort.available() > 0){bikeValue = myPort.read();         // read it and store it in val
+      aimPower=bikeValue*7;
+      //map(bikeValue,0,MAX_BIKE_SPEED,0,height);
+    }
+  } 
+  
+  power+=(aimPower-power)*0.5;
+  /* try { 
+   if (myPort.available() > 0) {  
+   val = myPort.read();
+   }
+   }
+   catch(Exception e) {
+   }*/
 }
 
-void display() {
+void keyBoardSensing() {
+  if (keyBoard) {
+    pKeyPressed=keyPressed;
+    if (keyPressed) {
+      vy+=0.5 ;
+    } else {
+      vy-=.2;
+    }
+    power=keyValue;
+    keyValue+=vy;
+    
+    /*if (val == 2) {
+     //fill(255, 0, 0);
+     if (power<height) {
+     if (force<0)force/=2;
+     if (keyBoard)force+=3-(0.0001*power);
+     else force+=1-(0.0001*amplifyingPower*power);
+     angle=(20-angle)*.5;
+     } else power=height;
+     }*/
+  }
+}
+
+void displayCharacter() {
+  text(power,x,y-50);
   pushMatrix();
-  if (hit)tint(255, 0, 0);
+  //if (hit)tint(255, 0, 0);
   translate(x, y);
   rotate(radians(angle));
   image(img, -size*0.5, -size*0.5, size, size);
-  noTint();
+  //noTint();
   popMatrix();
 }

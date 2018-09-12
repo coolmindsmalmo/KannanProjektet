@@ -14,10 +14,7 @@ class Obstacle extends Object {
     this( _x, _y, _w, _h);
     graphics=true;
     img=_img;
-    x=_x;
-    y=_y;
-    w=_w;
-    h=_h;
+
   }
   Obstacle(PImage[] _imgList, int _x, int _y, int _w, int _h) {
     this( _x, _y, _w, _h);
@@ -25,10 +22,7 @@ class Obstacle extends Object {
     imgList=_imgList;
     img=imgList[0];
     imgIndex=0;
-    x=_x;
-    y=_y;
-    w=_w;
-    h=_h;
+
   }
   void respawn() {
     x=width;
