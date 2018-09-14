@@ -1,5 +1,5 @@
 class Particle {
-  color fillColor=color(255),strokeColor=color(200);
+  color fillColor=color(255,100),strokeColor=color(200,50);
   boolean dead;
   int x, y, vx, vy, w, h, vw, vh, updateSkips, scaleSkips;
 
@@ -27,6 +27,11 @@ class Particle {
     vh =_vh;
     return this;
   }
+  Particle setColor(color c){
+  fillColor=c;
+  strokeColor=c;
+  return this;
+  }
   void update() {
     x+=vx;
     y+=vy;
@@ -34,7 +39,7 @@ class Particle {
       w+=vw;
       h+=vh;
     }
-    if (x<0)dead=true;
+    if (x<0 || w<0 || h<0)dead=true;
   }
   void display() {
     fill(fillColor);

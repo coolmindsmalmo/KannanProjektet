@@ -80,7 +80,6 @@ class Obstacle extends Object {
     if (imgIndex<0) {
       imgIndex=imgList.length-1;
     }
-    print(imgIndex);
     img=imgList[imgIndex];
   }
 

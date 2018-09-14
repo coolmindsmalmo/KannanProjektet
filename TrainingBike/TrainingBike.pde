@@ -5,9 +5,10 @@ Minim minim;
 AudioPlayer smack;
 final int MAX_BIKE_SPEED=190, MIN_ANGLE=-90, MAX_ANGLE=90;
 PGraphics scrollingBG, UI;
+int speed=5;
 Serial myPort;             // Create object from Serial class
 int bikeValue, bx, by, keyValue; // Data received from the serial port
-boolean noPort, pKeyPressed, hit, keyBoard, dead;
+boolean noPort, pKeyPressed, hit, keyBoard, dead, left, right;
 
 float power, aimPower, force, maxPower, minPower=-1.5, angle, x=500, y, size=100, amplifyingPower=4, vy;
 ArrayList<Obstacle> Obstacles= new ArrayList<Obstacle>(); 
@@ -66,40 +67,40 @@ void draw()
     w.update();
     if (w.hit(x, y, size*0.5, size*0.5)) {
       hit=true;
-      smack.rewind();
-      smack.play();
+      playSound(smack);
     }
     if (w.dead) {
       Obstacles.remove(w);
       break;
     }
   }
-     for (int i=particles.size ()-1; i>= 0; i--) { // checkStamps
-      particles.get(i).update();  
-      particles.get(i).display();
-      if (  particles.get(i).dead) particles.remove(i);
-    }
+  for (int i=particles.size ()-1; i>= 0; i--) { // checkStamps
+    particles.get(i).update();  
+    particles.get(i).display();
+    if (  particles.get(i).dead) particles.remove(i);
+  }
   sensePortInfo();
   keyBoardSensing();
   calcAngle();
   // hitDetection();
 
   y=height-power;
-   particles.add( new Particle (int(x), int(y), 10, 10, -10, random(-2,2)).setSize(30,30,-1,-1));
+  particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y), 10, 10, -speed, random(-2, 2)).setSize(30, 30, -1, -1));
 
   displayCharacter();
-  image(UI,0,0);
+  image(UI, 0, 0);
   //println("cykel:"+bikeValue +"  key:"+ keyValue);
 }
 void backgroundRender() {
   background(255);
-  bx+=5;
+  bx+=speed*0.5;
   if (bx>width)bx-=width;
   image(scrollingBG, -bx, -y*0.1);
 }
 void calcAngle() {
   angle=-vy*7;
   angle=constrain(angle, MIN_ANGLE, MAX_ANGLE);
+  y=constrain(y, 0, height);
 }
 void hitDetection() {
   if (hit) {
@@ -110,12 +111,47 @@ void hitDetection() {
 void sensePortInfo() {
   if (!noPort) {  
     if (myPort.available() > 0) {
-      bikeValue = myPort.read();         // read it and store it in val
-      aimPower=bikeValue*7;
-      //map(bikeValue,0,MAX_BIKE_SPEED,0,height);
+      bikeValue = myPort.read();     
+     // println(bikeValue);
+
+      if (bikeValue<252) {
+        aimPower=bikeValue*7;
+        //map(bikeValue,0,MAX_BIKE_SPEED,0,height);
+      } else { 
+        switch(bikeValue) {
+        case 256-1:
+          left=true;
+          particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y)-100, 80, 80, -5, 0).setColor( color(0, 0, 255)));
+          break;
+        case 256-2:
+          left=false;
+          particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y)-100, 80, 80, -5, 0).setColor(color(0, 0, 100)));
+          break;
+        case 256-3:
+          right=true;
+          particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y), 80, 80, -5, 0).setColor( color(255, 0, 0)));
+          break;
+        case 256-4:
+          right=false;
+          particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y), 80, 80, -5, 0).setColor(color(100, 0, 0)));
+          break;
+        }
+      }
+    }
+
+    if (left) {
+      particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y)-100, 40, 40, -5,0).setColor( color(0, 0, 255)));
+      x++;
+      speed--;
+    }
+
+
+    if (right) {
+      particles.add( new Particle (int(-cos(radians(angle))*40 +x), int(-sin(radians(angle))*40+y), 40, 40, -5, 0).setColor( color(255, 0, 0)));
+      x--;
+      speed++;
     }
   } 
-
   power+=(aimPower-power)*0.5;
   /* try { 
    if (myPort.available() > 0) {  
@@ -129,7 +165,7 @@ void sensePortInfo() {
 void keyBoardSensing() {
   if (keyBoard) {
     pKeyPressed=keyPressed;
-    if (keyPressed) {
+    if (keyPressed && key==' ') {
       vy+=0.5 ;
     } else {
       vy-=.2;
@@ -158,4 +194,17 @@ void displayCharacter() {
   image(img, -size*0.5, -size*0.5, size, size);
   //noTint();
   popMatrix();
+}
+void keyPressed() {
+  if (keyCode==LEFT) {
+    speed--;
+  }
+  if (keyCode==RIGHT) {
+    speed++;
+  }
+}
+
+void playSound(AudioPlayer au) {
+  au.rewind();
+  au.play();
 }
